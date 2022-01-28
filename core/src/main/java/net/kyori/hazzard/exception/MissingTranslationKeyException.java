@@ -17,8 +17,8 @@
  */
 package net.kyori.hazzard.exception;
 
-public final class MissingTranslationKey extends HazzardException {
-  public MissingTranslationKey(final String translationKey) {
+public final class MissingTranslationKeyException extends HazzardException {
+  public MissingTranslationKeyException(final String translationKey) {
     super("Missing translation key: " + translationKey);
   }
 }

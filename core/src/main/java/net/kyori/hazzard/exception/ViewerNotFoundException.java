@@ -17,32 +17,32 @@
  */
 package net.kyori.hazzard.exception;
 
-import net.kyori.hazzard.receiver.IViewerLookupService;
+import net.kyori.hazzard.viewer.IViewerLookupService;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
- * A {@link IViewerLookupService receiver locator} could not locate a receiver for a given method invocation.
+ * A {@link IViewerLookupService receiver locator} could not locate a viewer for a given method invocation.
  */
-public abstract class ViewerMissingException extends HazzardException {
-  protected ViewerMissingException() {
+public abstract class ViewerNotFoundException extends HazzardException {
+  protected ViewerNotFoundException() {
   }
 
-  protected ViewerMissingException(final @Nullable String message) {
+  protected ViewerNotFoundException(final @Nullable String message) {
     super(message);
   }
 
-  protected ViewerMissingException(final @Nullable String message,
-                                   final @Nullable Throwable cause) {
+  protected ViewerNotFoundException(final @Nullable String message,
+                                    final @Nullable Throwable cause) {
     super(message, cause);
   }
 
-  protected ViewerMissingException(final @Nullable Throwable cause) {
+  protected ViewerNotFoundException(final @Nullable Throwable cause) {
     super(cause);
   }
 
-  protected ViewerMissingException(final @Nullable String message, final @Nullable Throwable cause,
-                                   final boolean enableSuppression,
-                                   final boolean writableStackTrace) {
+  protected ViewerNotFoundException(final @Nullable String message, final @Nullable Throwable cause,
+                                    final boolean enableSuppression,
+                                    final boolean writableStackTrace) {
     super(message, cause, enableSuppression, writableStackTrace);
   }
 }

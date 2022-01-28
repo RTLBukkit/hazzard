@@ -19,12 +19,12 @@ package net.kyori.hazzard.internal;
 
 import java.util.Iterator;
 
-public final class PrefixedDelegateIterator<T> implements Iterator<T> {
-  private final T prefix;
-  private final Iterator<T> delegate;
+public final class PrefixedDelegateIterator<PrefixT> implements Iterator<PrefixT> {
+  private final PrefixT prefix;
+  private final Iterator<PrefixT> delegate;
   private boolean seenPrefix = false;
 
-  public PrefixedDelegateIterator(final T prefix, final Iterator<T> delegate) {
+  public PrefixedDelegateIterator(final PrefixT prefix, final Iterator<PrefixT> delegate) {
     this.prefix = prefix;
     this.delegate = delegate;
   }
@@ -35,7 +35,7 @@ public final class PrefixedDelegateIterator<T> implements Iterator<T> {
   }
 
   @Override
-  public T next() {
+  public PrefixT next() {
     if (!this.seenPrefix) {
       this.seenPrefix = true;
       return this.prefix;

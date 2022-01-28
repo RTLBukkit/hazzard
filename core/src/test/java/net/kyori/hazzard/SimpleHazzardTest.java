@@ -32,18 +32,18 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import net.kyori.hazzard.annotation.Message;
-import net.kyori.hazzard.annotation.Placeholder;
-import net.kyori.hazzard.message.IMessageRenderer;
-import net.kyori.hazzard.message.IMessageSender;
-import net.kyori.hazzard.message.IMessageSource;
+import net.kyori.hazzard.annotation.TranslationKey;
+import net.kyori.hazzard.annotation.TemplateArgument;
+import net.kyori.hazzard.message.IMessageComposer;
+import net.kyori.hazzard.message.IMessageSendingService;
+import net.kyori.hazzard.message.TemplateLocator;
 import net.kyori.hazzard.model.HazzardMethod;
-import net.kyori.hazzard.placeholder.ConclusionValue;
-import net.kyori.hazzard.placeholder.ContinuanceValue;
-import net.kyori.hazzard.strategy.IPlaceholderResolverStrategy;
-import net.kyori.hazzard.strategy.StandardPlaceholderResolverStrategy;
+import net.kyori.hazzard.variable.ReplacementResult;
+import net.kyori.hazzard.variable.IntermediateValue;
+import net.kyori.hazzard.strategy.ITemplateVariableResolver;
+import net.kyori.hazzard.strategy.StandardTemplateVariableResolution;
 import net.kyori.hazzard.strategy.supertype.StandardSupertypeThenInterfaceSupertypeStrategy;
-import net.kyori.hazzard.util.Either;
+import net.kyori.hazzard.util.VariableWrapper;
 import net.kyori.hazzard.util.Unit;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.junit.jupiter.api.Test;
@@ -53,14 +53,14 @@ import org.junit.jupiter.api.Test;
   void emptyHazzardInstance() {
     assertThatCode(() ->
         Hazzard.<EmptyHazzardType, String>builder(TypeToken.get(EmptyHazzardType.class))
-            .receiverLocatorResolver((method, proxy) -> (method1, proxy1, parameters) -> "receiver",
+            .viewerLookupServiceLocator((method, proxy) -> (method1, proxy1, parameters) -> "receiver",
                 2)
-            .sourced((receiver, messageKey) -> UNIT)
-            .rendered(
+            .templateLocator((receiver, messageKey) -> UNIT)
+            .composed(
                 (receiver, intermediateMessage, resolvedPlaceholders, method, owner) -> UNIT)
             .sent((receiver, renderedMessage) -> {
             })
-            .resolvingWithStrategy(new EmptyResolvingStrategy<>())
+            .variableResolver(new EmptyResolving<>())
             .create()
     ).doesNotThrowAnyException();
   }
@@ -68,21 +68,21 @@ import org.junit.jupiter.api.Test;
   @SuppressWarnings("unchecked")
   @Test
   void singleEmptyMethod() throws Exception {
-    final IMessageSource<Unit, Unit> messageSource = mock(IMessageSource.class);
-    final IMessageRenderer<Unit, Unit, Unit, Unit> messageRenderer = mock(IMessageRenderer.class);
-    final IMessageSender<Unit, Unit> messageSender = mock(IMessageSender.class);
-    when(messageSource.messageOf(any(), any())).thenReturn(UNIT);
-    when(messageRenderer.render(any(), any(), any(), any(), any())).thenReturn(UNIT);
+    final TemplateLocator<Unit, Unit> messageSource = mock(TemplateLocator.class);
+    final IMessageComposer<Unit, Unit, Unit, Unit> messageRenderer = mock(IMessageComposer.class);
+    final IMessageSendingService<Unit, Unit> messageSender = mock(IMessageSendingService.class);
+    when(messageSource.templateOf(any(), any())).thenReturn(UNIT);
+    when(messageRenderer.compose(any(), any(), any(), any(), any())).thenReturn(UNIT);
 
     assertThatCode(() ->
         Hazzard.<SingleEmptyMethodHazzardType, Unit>builder(
                 TypeToken.get(SingleEmptyMethodHazzardType.class))
-            .receiverLocatorResolver((method, proxy) -> (method1, proxy1, parameters) -> UNIT,
+            .viewerLookupServiceLocator((method, proxy) -> (method1, proxy1, parameters) -> UNIT,
                 2)
-            .sourced(messageSource)
-            .rendered(messageRenderer)
+            .templateLocator(messageSource)
+            .composed(messageRenderer)
             .sent(messageSender)
-            .resolvingWithStrategy(new EmptyResolvingStrategy<>())
+            .variableResolver(new EmptyResolving<>())
             .create()
             .method()
     ).doesNotThrowAnyException();
@@ -91,41 +91,41 @@ import org.junit.jupiter.api.Test;
   @SuppressWarnings("unchecked")
   @Test
   void singleMethodStringPlaceholders() throws Exception {
-    final IMessageSource<TestableReceiver, String> messageSource = mock(IMessageSource.class);
-    final IMessageRenderer<TestableReceiver, String, String, String> messageRenderer = spy(
+    final TemplateLocator<TestableReceiver, String> messageSource = mock(TemplateLocator.class);
+    final IMessageComposer<TestableReceiver, String, String, String> messageRenderer = spy(
         new SimpleStringFormatRenderer<>());
-    final IMessageSender<TestableReceiver, String> messageSender = mock(IMessageSender.class);
+    final IMessageSendingService<TestableReceiver, String> messageSender = mock(IMessageSendingService.class);
     final TestableReceiver receiver = mock(TestableReceiver.class);
-    when(messageSource.messageOf(any(), any())).thenReturn("Hello, %2$s!");
+    when(messageSource.templateOf(any(), any())).thenReturn("Hello, %2$s!");
 
     assertThatCode(() ->
         Hazzard.<SingleMethodStringPlaceholdersHazzardType, TestableReceiver>builder(
                 TypeToken.get(SingleMethodStringPlaceholdersHazzardType.class))
-            .receiverLocatorResolver((method, proxy) -> (method1, proxy1, parameters) -> receiver,
+            .viewerLookupServiceLocator((method, proxy) -> (method1, proxy1, parameters) -> receiver,
                 -1)
-            .sourced(messageSource)
-            .rendered(messageRenderer)
+            .templateLocator(messageSource)
+            .composed(messageRenderer)
             .sent(messageSender)
-            .resolvingWithStrategy(new StandardPlaceholderResolverStrategy<>(
+            .variableResolver(new StandardTemplateVariableResolution<>(
                 new StandardSupertypeThenInterfaceSupertypeStrategy(false)))
-            .weightedPlaceholderResolver(String.class,
+            .weightedVariableResolver(String.class,
                 (placeholderName, value, receiver1, owner, method, parameters) -> null,
                 3)
-            .weightedPlaceholderResolver(String.class,
+            .weightedVariableResolver(String.class,
                 (placeholderName, value, receiver1, owner, method, parameters) ->
-                    Map.of(placeholderName, Either.left(ConclusionValue.conclusionValue(value))),
+                    Map.of(placeholderName, VariableWrapper.finalResult(ReplacementResult.conclusionValue(value))),
                 1)
-            .weightedPlaceholderResolver(TypeToken.get(StringPlaceholderValue.class),
+            .weightedVariableResolver(TypeToken.get(StringPlaceholderValue.class),
                 (placeholderName, value, receiver1, owner, method, parameters) ->
-                    Map.of(placeholderName, Either.right(
-                        ContinuanceValue.continuanceValue(value.value(), String.class))),
+                    Map.of(placeholderName, VariableWrapper.intermediateResult(
+                        IntermediateValue.continuanceValue(value.value(), String.class))),
                 1)
             .create()
             .method(receiver, "first", new SimpleStringPlaceholder("second"))
     ).doesNotThrowAnyException();
 
-    verify(messageSource).messageOf(receiver, "test");
-    verify(messageRenderer).render(receiver, "Hello, %2$s!",
+    verify(messageSource).templateOf(receiver, "test");
+    verify(messageRenderer).compose(receiver, "Hello, %2$s!",
         new LinkedHashMap<>(Map.of("placeholder", "first", "cringe", "second")),
         SingleMethodStringPlaceholdersHazzardType.class.getMethods()[0],
         TypeToken.get(SingleMethodStringPlaceholdersHazzardType.class).getType());
@@ -134,31 +134,31 @@ import org.junit.jupiter.api.Test;
 
   @Test
   void defaultMethodOneParam() throws Exception {
-    final IMessageSource<TestableReceiver, String> messageSource = mock(IMessageSource.class);
-    final IMessageRenderer<TestableReceiver, String, String, String> messageRenderer = spy(
+    final TemplateLocator<TestableReceiver, String> messageSource = mock(TemplateLocator.class);
+    final IMessageComposer<TestableReceiver, String, String, String> messageRenderer = spy(
         new SimpleStringFormatRenderer<>());
-    final IMessageSender<TestableReceiver, String> messageSender = mock(IMessageSender.class);
+    final IMessageSendingService<TestableReceiver, String> messageSender = mock(IMessageSendingService.class);
     final TestableReceiver receiver = mock(TestableReceiver.class);
-    when(messageSource.messageOf(any(), any())).thenReturn("Hello, %1$s!");
+    when(messageSource.templateOf(any(), any())).thenReturn("Hello, %1$s!");
 
     assertThatCode(() ->
         Hazzard.<DefaultMethodNoParams, TestableReceiver>builder(TypeToken.get(DefaultMethodNoParams.class))
-            .receiverLocatorResolver((method, proxy) -> (method1, proxy1, parameters) -> receiver, -1)
-            .sourced(messageSource)
-            .rendered(messageRenderer)
+            .viewerLookupServiceLocator((method, proxy) -> (method1, proxy1, parameters) -> receiver, -1)
+            .templateLocator(messageSource)
+            .composed(messageRenderer)
             .sent(messageSender)
-            .resolvingWithStrategy(new StandardPlaceholderResolverStrategy<>(
+            .variableResolver(new StandardTemplateVariableResolution<>(
                 new StandardSupertypeThenInterfaceSupertypeStrategy(false)
             ))
-            .weightedPlaceholderResolver(String.class,
+            .weightedVariableResolver(String.class,
                 (placeholderName, value, receiver1, owner, method, parameters) ->
-                    Map.of(placeholderName, Either.left(ConclusionValue.conclusionValue(value))), 1)
+                    Map.of(placeholderName, VariableWrapper.finalResult(ReplacementResult.conclusionValue(value))), 1)
             .create()
             .method(receiver)
     ).doesNotThrowAnyException();
 
-    verify(messageSource).messageOf(receiver, "test");
-    verify(messageRenderer).render(receiver, "Hello, %1$s!",
+    verify(messageSource).templateOf(receiver, "test");
+    verify(messageRenderer).compose(receiver, "Hello, %1$s!",
         new LinkedHashMap<>(Map.of("placeholder", "placeholder value")),
         DefaultMethodNoParams.class.getMethods()[0],
         TypeToken.get(DefaultMethodNoParams.class).getType());
@@ -169,24 +169,24 @@ import org.junit.jupiter.api.Test;
   }
 
   interface SingleEmptyMethodHazzardType {
-    @Message("test")
+    @TranslationKey("test")
     void method();
   }
 
   interface SingleMethodStringPlaceholdersHazzardType {
-    @Message("test")
+    @TranslationKey("test")
     void method(
         final TestableReceiver receiver,
-        @Placeholder final String placeholder,
-        @Placeholder("cringe") final SimpleStringPlaceholder placeholder2
+        @TemplateArgument final String placeholder,
+        @TemplateArgument("cringe") final SimpleStringPlaceholder placeholder2
     );
   }
 
   interface DefaultMethodNoParams {
-    @Message("test")
+    @TranslationKey("test")
     void method(
         final TestableReceiver receiver,
-        @Placeholder final String placeholder
+        @TemplateArgument final String placeholder
     );
 
     default void method(final TestableReceiver receiver) {
@@ -200,24 +200,24 @@ import org.junit.jupiter.api.Test;
     }
   }
 
-  private static class EmptyResolvingStrategy<R, I, F> implements
-      IPlaceholderResolverStrategy<R, I, F> {
+  private static class EmptyResolving<R, I, F> implements
+          ITemplateVariableResolver<R, I, F> {
     @Override
-    public Map<String, ? extends F> resolvePlaceholders(final Hazzard<R, I, ?, F> hazzard,
-        final R receiver, final I intermediateText,
-        final HazzardMethod<? extends R> hazzardMethod,
-        final @Nullable Object[] parameters) {
+    public Map<String, ? extends F> resolveVariables(final Hazzard<R, I, ?, F> hazzard,
+                                                     final R receiver, final I template,
+                                                     final HazzardMethod<? extends R> hazzardMethod,
+                                                     final @Nullable Object[] parameters) {
       return emptyMap();
     }
   }
 
   private static class SimpleStringFormatRenderer<R> implements
-      IMessageRenderer<R, String, String, String> {
+          IMessageComposer<R, String, String, String> {
     @Override
-    public String render(final R receiver, final String intermediateMessage,
-        final Map<String, ? extends String> resolvedPlaceholders, final Method method,
-        final Type owner) {
-      return String.format(intermediateMessage, resolvedPlaceholders.values().toArray());
+    public String compose(final R viewer, final String template,
+                          final Map<String, ? extends String> replacementValues, final Method annotatedMethod,
+                          final Type owningType) {
+      return String.format(template, replacementValues.values().toArray());
     }
   }
 

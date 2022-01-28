@@ -29,20 +29,20 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 /**
  * The {@link InvocationHandler} for a {@link Hazzard}-driven {@link Proxy}.
  *
- * @param <R> the receiver type
- * @param <I> the intermediate message type
- * @param <F> the finalised placeholder type, post-resolving
+ * @param <ViewerT> the viewer type
+ * @param <TemplateT> the template type
+ * @param <ReplacementT> the replacement value type, post-resolving
  */
 @ThreadSafe
-/* package-private */ final class HazzardInvocationHandler<R, I, O, F> implements InvocationHandler {
+/* package-private */ final class HazzardInvocationHandler<ViewerT, TemplateT, MessageT, ReplacementT> implements InvocationHandler {
   /**
    * An empty array to substitute a state of missing method arguments.
    */
   private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
 
-  private final Hazzard<R, I, O, F> hazzard;
+  private final Hazzard<ViewerT, TemplateT, MessageT, ReplacementT> hazzard;
 
-  HazzardInvocationHandler(final Hazzard<R, I, O, F> hazzard) {
+  HazzardInvocationHandler(final Hazzard<ViewerT, TemplateT, MessageT, ReplacementT> hazzard) {
     this.hazzard = hazzard;
   }
 
@@ -84,27 +84,27 @@ import org.checkerframework.checker.nullness.qual.Nullable;
     }
 
     final var hazzardMethod = this.hazzard.scannedMethod(method);
-    final R receiver = hazzardMethod.receiverLocator().locate(method, proxy, args);
-    final I intermediateMessage = this.hazzard.messageSource().messageOf(receiver, hazzardMethod.messageKey());
+    final ViewerT viewer = hazzardMethod.viewerLookupService().lookup(method, proxy, args);
+    final TemplateT template = this.hazzard.templateLocator().templateOf(viewer, hazzardMethod.translationKey());
     final var resolvedPlaceholders =
-        this.hazzard.placeholderResolverStrategy()
-            .resolvePlaceholders(
+        this.hazzard.templateVariableResolver()
+            .resolveVariables(
                 this.hazzard,
-                receiver,
-                intermediateMessage,
+                viewer,
+                template,
                 hazzardMethod,
                 args
             );
-    final O renderedMessage = this.hazzard.messageRenderer().render(
-        receiver,
-        intermediateMessage,
+    final MessageT renderedMessage = this.hazzard.messageComposer().compose(
+        viewer,
+        template,
         resolvedPlaceholders,
         method,
         this.hazzard.proxiedType()
     );
 
     if (method.getReturnType() == void.class) {
-      this.hazzard.messageSender().send(receiver, renderedMessage);
+      this.hazzard.messageSender().send(viewer, renderedMessage);
       return null;
     } else {
       return renderedMessage;

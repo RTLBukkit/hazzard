@@ -1,10 +1,10 @@
 plugins {
-    id("moonshine.api")
+    id("hazzard.api")
 }
 
-description = "Standard implementation of core functionality for moonshine"
+description = "Standard implementation of core functionality for hazzard"
 
 dependencies {
-    api(project(":moonshine-core"))
-    implementation(project(":moonshine-internal"))
+    api(project(":hazzard-core"))
+    implementation(project(":hazzard-internal"))
 }

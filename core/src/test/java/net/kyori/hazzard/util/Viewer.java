@@ -17,6 +17,6 @@
  */
 package net.kyori.hazzard.util;
 
-public interface Receiver {
+public interface Viewer {
   void send(final Object message);
 }

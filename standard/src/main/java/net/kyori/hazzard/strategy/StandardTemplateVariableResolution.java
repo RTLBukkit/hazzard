@@ -29,36 +29,36 @@ import java.util.Map;
 import net.kyori.hazzard.Hazzard;
 import net.kyori.hazzard.annotation.TemplateArgument;
 import net.kyori.hazzard.annotation.meta.ThreadSafe;
-import net.kyori.hazzard.exception.PlaceholderResolvingException;
-import net.kyori.hazzard.exception.UnfinishedPlaceholderException;
+import net.kyori.hazzard.exception.VariableResolutionException;
+import net.kyori.hazzard.exception.UnfulfilledVariableReplacementException;
 import net.kyori.hazzard.internal.PrefixedDelegateIterator;
 import net.kyori.hazzard.model.HazzardMethod;
-import net.kyori.hazzard.placeholder.ContinuanceValue;
-import net.kyori.hazzard.placeholder.IPlaceholderResolver;
+import net.kyori.hazzard.variable.IntermediateValue;
+import net.kyori.hazzard.variable.ITemplateVariableResolver;
 import net.kyori.hazzard.strategy.supertype.ISupertypeStrategy;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 @ThreadSafe
-public final class StandardTemplateArgumentResolution<R, I, F> implements
-        ITemplateArgumentResolver<R, I, F> {
+public final class StandardTemplateVariableResolution<ViewerT, TemplateT, ReplacementT> implements
+        net.kyori.hazzard.strategy.ITemplateVariableResolver<ViewerT, TemplateT, ReplacementT> {
   private final ISupertypeStrategy supertypeStrategy;
 
-  public StandardTemplateArgumentResolution(final ISupertypeStrategy supertypeStrategy) {
+  public StandardTemplateVariableResolution(final ISupertypeStrategy supertypeStrategy) {
     this.supertypeStrategy = supertypeStrategy;
   }
 
   @Override
-  public Map<String, ? extends F> resolvePlaceholders(final Hazzard<R, I, ?, F> hazzard,
-      final R receiver, final I intermediateText,
-      final HazzardMethod<? extends R> hazzardMethod,
-      final @Nullable Object[] parameters)
-      throws PlaceholderResolvingException {
+  public Map<String, ? extends ReplacementT> resolveVariables(final Hazzard<ViewerT, TemplateT, ?, ReplacementT> hazzard,
+                                                              final ViewerT receiver, final TemplateT template,
+                                                              final HazzardMethod<? extends ViewerT> hazzardMethod,
+                                                              final @Nullable Object[] parameters)
+      throws VariableResolutionException {
     if (parameters.length == 0) {
       return Collections.emptyMap();
     }
 
-    final Map<String, F> finalisedPlaceholders = new LinkedHashMap<>(parameters.length);
-    final Map<String, ContinuanceValue<?>> resolvingPlaceholders = new LinkedHashMap<>(16);
+    final Map<String, ReplacementT> finalisedPlaceholders = new LinkedHashMap<>(parameters.length);
+    final Map<String, IntermediateValue<?>> resolvingPlaceholders = new LinkedHashMap<>(16);
     final Parameter[] methodParameters = hazzardMethod.reflectMethod().getParameters();
     final Type[] exactParameterTypes = GenericTypeReflector.getParameterTypes(
         hazzardMethod.reflectMethod(), hazzard.proxiedType());
@@ -84,7 +84,7 @@ public final class StandardTemplateArgumentResolution<R, I, F> implements
           ? parameter.getName()
           : templateArgument.value();
       resolvingPlaceholders
-          .put(placeholderName, ContinuanceValue.continuanceValue(value, parameterType));
+          .put(placeholderName, IntermediateValue.continuanceValue(value, parameterType));
     }
 
     this.resolvePlaceholder(hazzard, receiver, finalisedPlaceholders,
@@ -94,27 +94,27 @@ public final class StandardTemplateArgumentResolution<R, I, F> implements
   }
 
   /**
-   * Resolve a single placeholder.
+   * Resolve a single template argument.
    *
-   * @param hazzard             the hazzard instance
-   * @param finalisedPlaceholders the finalised placeholders
-   * @param resolvingPlaceholders the placeholders to resolve
-   * @param hazzardMethod       the method we are resolving a placeholder for
+   * @param hazzard the hazzard instance
+   * @param variableReplacements the finalised replacements
+   * @param resolvingVariables the placeholders to resolve
+   * @param hazzardMethod the method we are resolving a placeholder for
    */
-  private void resolvePlaceholder(final Hazzard<R, I, ?, F> hazzard, final R receiver,
-      final Map<String, F> finalisedPlaceholders,
-      final Map<String, ContinuanceValue<?>> resolvingPlaceholders,
-      final HazzardMethod<? extends R> hazzardMethod, final @Nullable Object[] parameters)
-      throws UnfinishedPlaceholderException {
-    final var weightedPlaceholderResolvers = hazzard.weightedPlaceholderResolvers();
+  private void resolvePlaceholder(final Hazzard<ViewerT, TemplateT, ?, ReplacementT> hazzard, final ViewerT receiver,
+                                  final Map<String, ReplacementT> variableReplacements,
+                                  final Map<String, IntermediateValue<?>> resolvingVariables,
+                                  final HazzardMethod<? extends ViewerT> hazzardMethod, final @Nullable Object[] parameters)
+      throws UnfulfilledVariableReplacementException {
+    final var weightedVariableResolver = hazzard.weightedVariableResolvers();
 
     // Shamelessly stealing ~~kashike's~~ mbaxter's joke
     dancing:
-    while (!resolvingPlaceholders.isEmpty()) {
-      final var resolvingPlaceholderIterator = resolvingPlaceholders.entrySet().iterator();
-      while (resolvingPlaceholderIterator.hasNext()) {
-        final var continuanceEntry = resolvingPlaceholderIterator.next();
-        final String continuancePlaceholderName = continuanceEntry.getKey();
+    while (!resolvingVariables.isEmpty()) {
+      final var unresolvedVariables = resolvingVariables.entrySet().iterator();
+      while (unresolvedVariables.hasNext()) {
+        final var continuanceEntry = unresolvedVariables.next();
+        final String continuanceVariableName = continuanceEntry.getKey();
         final Type type = continuanceEntry.getValue().type();
         final Object value = continuanceEntry.getValue().value();
 
@@ -123,32 +123,32 @@ public final class StandardTemplateArgumentResolution<R, I, F> implements
         while (hierarchyIterator.hasNext()) {
           final Type supertype = hierarchyIterator.next();
 
-          for (final var weighted : weightedPlaceholderResolvers.getOrDefault(supertype, emptyNavigableSet())) {
+          for (final var weighted : weightedVariableResolver.getOrDefault(supertype, emptyNavigableSet())) {
             @SuppressWarnings("unchecked") // This should be equivalent.
-            final var placeholderResolver =
-                (IPlaceholderResolver<R, Object, ? extends F>) weighted.value();
+            final var variableResolver =
+                (ITemplateVariableResolver<ViewerT, Object, ? extends ReplacementT>) weighted.value();
 
-            final var resolverResult =
-                placeholderResolver.resolve(continuancePlaceholderName, value, receiver,
+            final var result =
+                variableResolver.resolve(continuanceVariableName, value, receiver,
                     hazzardMethod.owner().getType(),
                     hazzardMethod.reflectMethod(), parameters);
-            if (resolverResult == null) {
+            if (result == null) {
               // The resolver did not want to resolve this; pass it on.
               continue;
             }
 
-            resolvingPlaceholderIterator.remove();
+            unresolvedVariables.remove();
 
-            resolverResult.forEach((resolvedName, resolvedValue) ->
-                resolvedValue.map(conclusionValue -> finalisedPlaceholders
+            result.forEach((resolvedName, resolvedValue) ->
+                resolvedValue.map(conclusionValue -> variableReplacements
                         .put(resolvedName, conclusionValue.value()),
-                    continuanceValue -> resolvingPlaceholders.put(resolvedName, continuanceValue)));
+                    continuanceValue -> resolvingVariables.put(resolvedName, continuanceValue)));
 
             continue dancing;
           }
         }
 
-        throw new UnfinishedPlaceholderException(hazzardMethod, continuancePlaceholderName, value);
+        throw new UnfulfilledVariableReplacementException(hazzardMethod, continuanceVariableName, value);
       }
     }
   }

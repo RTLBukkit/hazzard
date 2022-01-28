@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package net.kyori.hazzard.placeholder;
+package net.kyori.hazzard.variable;
 
 import net.kyori.hazzard.annotation.meta.ThreadSafe;
 import org.checkerframework.dataflow.qual.SideEffectFree;
@@ -26,13 +26,13 @@ import org.checkerframework.dataflow.qual.SideEffectFree;
  * @param <F> the type of the value
  */
 @ThreadSafe
-public final class ConclusionValue<F> extends ResolvingValue<F> {
-  private ConclusionValue(final F value) {
+public final class ReplacementResult<F> extends ResolvingValue<F> {
+  private ReplacementResult(final F value) {
     super(value);
   }
 
   @SideEffectFree
-  public static <F> ConclusionValue<F> conclusionValue(final F value) {
-    return new ConclusionValue<>(value);
+  public static <F> ReplacementResult<F> conclusionValue(final F value) {
+    return new ReplacementResult<>(value);
   }
 }

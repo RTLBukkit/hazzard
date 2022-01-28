@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package net.kyori.hazzard.receiver;
+package net.kyori.hazzard.viewer;
 
 import java.lang.reflect.Method;
 import net.kyori.hazzard.annotation.meta.ThreadSafe;
@@ -33,7 +33,8 @@ public interface IViewerLookupService<ViewerT> {
   /**
    * Locate a viewer on a given proxy invocation.
    * <p>
-   * If no viewer is wanted, a Null Object Viewer @See{https://java-design-patterns.com/patterns/null-object/} should be
+   * If no viewer is wanted, but correctly resolved, e.g. a message is undeliverable due to a viewer being unavailable,
+   * a Null Object Viewer @See{https://java-design-patterns.com/patterns/null-object/} should be
    * created in its stead; this means a generic viewer that will simply no-op on any messages sent.
    * </p>
    *
@@ -41,8 +42,8 @@ public interface IViewerLookupService<ViewerT> {
    * @param proxy      the proxy {@code method} was invoked on
    * @param parameters the parameters passed to {@code method} on invocation; the parameters may be {@code null}, but
    *                   the array itself is always non-{@code null}
-   * @return the located receiver
-   * @throws ViewerNotFoundException if a viewer cannot be located or is otherwise unavailable
+   * @return the located Viewer
+   * @throws ViewerNotFoundException if a viewer cannot be located
    */
   ViewerT lookup(final Method method, final Object proxy, final @Nullable Object[] parameters)
       throws ViewerNotFoundException;

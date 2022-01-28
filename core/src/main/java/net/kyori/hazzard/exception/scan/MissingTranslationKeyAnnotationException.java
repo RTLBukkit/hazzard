@@ -25,10 +25,10 @@ import net.kyori.hazzard.internal.ReflectiveUtils;
 /**
  * A method was not {@link Method#isDefault() a default method}, yet had no {@link TranslationKey} annotation.
  */
-public final class MissingMessageAnnotationException extends UnscannableMethodException {
-  public MissingMessageAnnotationException(final Type owner, final Method method) {
+public final class MissingTranslationKeyAnnotationException extends UnscannableMethodException {
+  public MissingTranslationKeyAnnotationException(final Type owner, final Method method) {
     super(owner, method,
-        "Given method does not have a @Message annotation: "
+        "Given method does not have a @TranslationKey annotation: "
             + ReflectiveUtils.formatMethodName(owner, method));
   }
 }

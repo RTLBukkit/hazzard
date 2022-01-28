@@ -15,12 +15,11 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package net.kyori.hazzard.receiver;
+package net.kyori.hazzard.viewer;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 
-import net.kyori.hazzard.Resolver;
 import net.kyori.hazzard.annotation.meta.ThreadSafe;
 import org.checkerframework.checker.nullness.qual.Nullable;
 

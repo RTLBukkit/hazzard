@@ -26,10 +26,10 @@ import static org.mockito.Mockito.when;
 
 import io.leangen.geantyref.TypeToken;
 import java.util.Map;
-import net.kyori.hazzard.message.IMessageRenderer;
-import net.kyori.hazzard.message.IMessageSender;
-import net.kyori.hazzard.message.IMessageSource;
-import net.kyori.hazzard.strategy.StandardPlaceholderResolverStrategy;
+import net.kyori.hazzard.message.IMessageComposer;
+import net.kyori.hazzard.message.IMessageSendingService;
+import net.kyori.hazzard.message.TemplateLocator;
+import net.kyori.hazzard.strategy.StandardTemplateVariableResolution;
 import net.kyori.hazzard.strategy.supertype.StandardSupertypeThenInterfaceSupertypeStrategy;
 import net.kyori.hazzard.util.Unit;
 import org.junit.jupiter.api.Test;
@@ -39,55 +39,55 @@ class DefaultMethodTest {
 
   @Test
   void emptyDefaultMethodTest() throws Exception {
-    final IMessageSource<Unit, Unit> source = mock(IMessageSource.class);
-    final IMessageRenderer<Unit, Unit, Unit, Unit> renderer = mock(IMessageRenderer.class);
-    final IMessageSender<Unit, Unit> sender = mock(IMessageSender.class);
-    when(source.messageOf(any(), any())).thenReturn(UNIT);
-    when(renderer.render(any(), any(), any(), any(), any())).thenReturn(UNIT);
+    final TemplateLocator<Unit, Unit> source = mock(TemplateLocator.class);
+    final IMessageComposer<Unit, Unit, Unit, Unit> renderer = mock(IMessageComposer.class);
+    final IMessageSendingService<Unit, Unit> sender = mock(IMessageSendingService.class);
+    when(source.templateOf(any(), any())).thenReturn(UNIT);
+    when(renderer.compose(any(), any(), any(), any(), any())).thenReturn(UNIT);
 
     assertThatCode(() ->
         Hazzard.<DefaultMethodTestType, Unit>builder(TypeToken.get(DefaultMethodTestType.class))
-            .receiverLocatorResolver((method, proxy) -> (method1, proxy1, parameters) -> UNIT, 1)
-            .sourced(source)
-            .rendered(renderer)
+            .viewerLookupServiceLocator((method, proxy) -> (method1, proxy1, parameters) -> UNIT, 1)
+            .templateLocator(source)
+            .composed(renderer)
             .sent(sender)
-            .resolvingWithStrategy(new StandardPlaceholderResolverStrategy<>(
+            .variableResolver(new StandardTemplateVariableResolution<>(
                 new StandardSupertypeThenInterfaceSupertypeStrategy(false)
             ))
-            .weightedPlaceholderResolver(String.class,
+            .weightedVariableResolver(String.class,
                 (placeholderName, value, receiver, owner, method, parameters) -> Map.of(), 1)
             .create()
             .empty()
     ).doesNotThrowAnyException();
 
-    verify(source).messageOf(UNIT, DefaultMethodTestType.MESSAGE_KEY);
+    verify(source).templateOf(UNIT, DefaultMethodTestType.MESSAGE_KEY);
     verify(sender).send(UNIT, UNIT);
   }
 
   @Test
   void defaultMethodTest() throws Exception {
-    final IMessageSource<Unit, Unit> source = mock(IMessageSource.class);
-    final IMessageRenderer<Unit, Unit, Unit, Unit> renderer = mock(IMessageRenderer.class);
-    final IMessageSender<Unit, Unit> sender = mock(IMessageSender.class);
-    when(source.messageOf(any(), any())).thenReturn(UNIT);
-    when(renderer.render(any(), any(), any(), any(), any())).thenReturn(UNIT);
+    final TemplateLocator<Unit, Unit> source = mock(TemplateLocator.class);
+    final IMessageComposer<Unit, Unit, Unit, Unit> renderer = mock(IMessageComposer.class);
+    final IMessageSendingService<Unit, Unit> sender = mock(IMessageSendingService.class);
+    when(source.templateOf(any(), any())).thenReturn(UNIT);
+    when(renderer.compose(any(), any(), any(), any(), any())).thenReturn(UNIT);
 
     assertThatCode(() ->
         Hazzard.<DefaultMethodTestType, Unit>builder(TypeToken.get(DefaultMethodTestType.class))
-            .receiverLocatorResolver((method, proxy) -> (method1, proxy1, parameters) -> UNIT, 1)
-            .sourced(source)
-            .rendered(renderer)
+            .viewerLookupServiceLocator((method, proxy) -> (method1, proxy1, parameters) -> UNIT, 1)
+            .templateLocator(source)
+            .composed(renderer)
             .sent(sender)
-            .resolvingWithStrategy(new StandardPlaceholderResolverStrategy<>(
+            .variableResolver(new StandardTemplateVariableResolution<>(
                 new StandardSupertypeThenInterfaceSupertypeStrategy(false)
             ))
-            .weightedPlaceholderResolver(String.class,
+            .weightedVariableResolver(String.class,
                 (placeholderName, value, receiver, owner, method, parameters) -> Map.of(), 1)
             .create()
             .withParameter(DefaultMethodTestType.DEFAULT_VALUE)
     ).doesNotThrowAnyException();
 
-    verify(source).messageOf(UNIT, DefaultMethodTestType.MESSAGE_KEY);
+    verify(source).templateOf(UNIT, DefaultMethodTestType.MESSAGE_KEY);
     verify(sender).send(UNIT, UNIT);
   }
 

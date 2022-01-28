@@ -24,12 +24,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * This defines that a method should use a certain message key for the proxied message method.
+ * This defines that a method should use a certain translation key for the proxied message method.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface Message {
+public @interface TranslationKey {
   /**
    * @return the message key to use for this message method.
    */

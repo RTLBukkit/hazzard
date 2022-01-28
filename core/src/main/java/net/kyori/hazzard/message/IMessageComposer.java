@@ -23,16 +23,16 @@ import java.util.Map;
 import net.kyori.hazzard.annotation.meta.ThreadSafe;
 
 /**
- * A rendered of intermediate messages with resolved placeholders for a given receiver.
+ * A rendered of templated messages with resolved variables for a given viewer.
  *
  * @param <ViewerT> the eventual viewer type of this message
- * @param <MessageBuilderT> the intermediate message type
+ * @param <TemplateT> the intermediate message type
  * @param <MessageT> the output/rendered message type
- * @param <FinalizedPlaceholderT> the finalised placeholder type
+ * @param <ReplacementT> the finalised replacement type
  */
 @FunctionalInterface
 @ThreadSafe
-public interface IMessageRenderer<ViewerT, MessageBuilderT, MessageT, FinalizedPlaceholderT> {
+public interface IMessageComposer<ViewerT, TemplateT, MessageT, ReplacementT> {
   /**
    * Render the intermediate message into a rendered message.
    * <p>
@@ -40,12 +40,16 @@ public interface IMessageRenderer<ViewerT, MessageBuilderT, MessageT, FinalizedP
    * </p>
    *
    * @param viewer the viewer of the message
-   * @param messageBuilder the intermediate message to render
-   * @param resolvedPlaceholders the resolved placeholders of this message
+   * @param template the intermediate message to render
+   * @param replacementValues the resolved placeholders of this message
    * @param annotatedMethod the method invoked
    * @param owningType the type of the owning interface of the method
    * @return the rendered message
    */
-  MessageT render(final ViewerT viewer, final MessageBuilderT messageBuilder, final Map<String, ? extends FinalizedPlaceholderT> resolvedPlaceholders,
-                  final Method annotatedMethod, final Type owningType);
+  MessageT compose(final ViewerT viewer,
+                   final TemplateT template,
+                   final Map<String, ? extends ReplacementT> replacementValues,
+                   final Method annotatedMethod,
+                   final Type owningType
+  );
 }

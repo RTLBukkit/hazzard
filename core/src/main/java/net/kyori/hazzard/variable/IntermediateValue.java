@@ -31,10 +31,10 @@ import org.checkerframework.dataflow.qual.SideEffectFree;
  * @param <F> the type of the value
  */
 @ThreadSafe
-public final class ContinuanceValue<F> extends ResolvingValue<F> {
+public final class IntermediateValue<F> extends ResolvingValue<F> {
   private final Type type;
 
-  private ContinuanceValue(final F value, final Type type) {
+  private IntermediateValue(final F value, final Type type) {
     super(value);
     this.type = type;
 
@@ -45,18 +45,18 @@ public final class ContinuanceValue<F> extends ResolvingValue<F> {
   }
 
   @SideEffectFree
-  public static <F> ContinuanceValue<F> continuanceValue(final F value, final Type type) {
-    return new ContinuanceValue<>(value, type);
+  public static <F> IntermediateValue<F> continuanceValue(final F value, final Type type) {
+    return new IntermediateValue<>(value, type);
   }
 
   @SideEffectFree
-  public static <F> ContinuanceValue<F> continuanceValue(final F value, final AnnotatedType type) {
-    return new ContinuanceValue<>(value, type.getType());
+  public static <F> IntermediateValue<F> continuanceValue(final F value, final AnnotatedType type) {
+    return new IntermediateValue<>(value, type.getType());
   }
 
   @SideEffectFree
-  public static <F> ContinuanceValue<F> continuanceValue(final F value, final TypeToken<? extends F> type) {
-    return new ContinuanceValue<>(value, type.getType());
+  public static <F> IntermediateValue<F> continuanceValue(final F value, final TypeToken<? extends F> type) {
+    return new IntermediateValue<>(value, type.getType());
   }
 
   /**

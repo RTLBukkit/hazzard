@@ -19,8 +19,8 @@ Use a single test per test class with the following structure:
 --
 src/main/test/<package>
 + <test files>
-+ placeholder/
-  \ <placeholder resolvers and whatnot>
++ templateArgument/
+  \ <templateArgument resolvers and whatnot>
 + util/
   \ <util method classes and whatnot>
 --

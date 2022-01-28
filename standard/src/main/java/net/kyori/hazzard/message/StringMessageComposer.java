@@ -29,7 +29,7 @@ import java.util.function.Function;
  * <p>
  * Most people will want a more advanced formatter for Discord messages/embeds, Minecraft component messages, etc.
  */
-public record StringMessageRenderer<ViewerT, TemplateT, MessageT, ReplacementT>(
+public record StringMessageComposer<ViewerT, TemplateT, MessageT, ReplacementT>(
     String prefix,
     String suffix,
     Function<TemplateT, String> intermediateToStringConverter,

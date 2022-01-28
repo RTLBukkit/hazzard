@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package net.kyori.hazzard.placeholder;
+package net.kyori.hazzard.variable;
 
 import net.kyori.hazzard.annotation.meta.ThreadSafe;
 import org.checkerframework.dataflow.qual.Pure;
@@ -26,7 +26,7 @@ import org.checkerframework.dataflow.qual.Pure;
  * @param <F> the value to store
  */
 @ThreadSafe
-public abstract sealed class ResolvingValue<F> permits ConclusionValue, ContinuanceValue {
+public abstract sealed class ResolvingValue<F> permits ReplacementResult, IntermediateValue {
   private final F value;
 
   /* package-private */ ResolvingValue(final F value) {

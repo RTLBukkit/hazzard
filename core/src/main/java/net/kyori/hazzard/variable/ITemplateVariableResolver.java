@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package net.kyori.hazzard.placeholder;
+package net.kyori.hazzard.variable;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
@@ -37,12 +37,12 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 public interface ITemplateVariableResolver<ViewerT, TemplateArgumentT, TemplateReplacementT> {
   static <ViewerT, T> ITemplateVariableResolver<ViewerT, T, T> identityPlaceholderResolver() {
     return (placeholderName, value, receiver, owner, method, parameters) ->
-        Map.of(placeholderName, VariableWrapper.finalResult(ConclusionValue.conclusionValue(value)));
+        Map.of(placeholderName, VariableWrapper.finalResult(ReplacementResult.conclusionValue(value)));
   }
 
   /**
    * Resolves a given variable into a result. In most cases, you want to return {@link
-   * ContinuanceValue#continuanceValue(Object, Type) ContinuanceValue}s.
+   * IntermediateValue#continuanceValue(Object, Type) ContinuanceValue}s.
    *
    * @param variableName the name of the template argument that is currently being resolved; two results cannot share name,
    *     so this is only applicable as a prefix or for the map keys
@@ -54,7 +54,7 @@ public interface ITemplateVariableResolver<ViewerT, TemplateArgumentT, TemplateR
    * @return the resolved TemplateVariable replacement(s), or {@code null} if you wish to pass on the resolving to the
    * next resolver. The map must be {@code { placeholder name => state value }}
    */
-  @Nullable Map<String, VariableWrapper<ConclusionValue<? extends TemplateReplacementT>, ContinuanceValue<?>>> resolve(
+  @Nullable Map<String, VariableWrapper<ReplacementResult<? extends TemplateReplacementT>, IntermediateValue<?>>> resolve(
           final String variableName, final TemplateArgumentT value, final ViewerT viewer, final Type owner,
           final Method method, final @Nullable Object[] parameters);
 }

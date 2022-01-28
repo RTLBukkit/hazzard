@@ -20,19 +20,19 @@ package net.kyori.hazzard.message;
 import net.kyori.hazzard.annotation.meta.ThreadSafe;
 
 /**
- * A trait that defines how to send finalised messages to the given receiver.
+ * A trait that defines how to send finalised messages to the given viewer.
  *
- * @param <ReceiverT> the receiver type of the message
+ * @param <ViewerT> the viewer type of the message
  * @param <OutputT> the output/rendered message
  */
 @FunctionalInterface
 @ThreadSafe
-public interface IMessageSender<ReceiverT, OutputT> {
+public interface IMessageSendingService<ViewerT, OutputT> {
   /**
    * Send the message to the given receiver.
    *
-   * @param receiver        the receiver of the message
+   * @param viewer the receiver of the message
    * @param renderedMessage the rendered message to send to the receiver
    */
-  void send(ReceiverT receiver, OutputT renderedMessage);
+  void send(ViewerT viewer, OutputT renderedMessage);
 }

@@ -1,8 +1,8 @@
 plugins {
-    id("moonshine.api")
+    id("hazzard.api")
 }
 
-description = "Internal implementation functionality for moonshine"
+description = "Internal implementation functionality for hazzard"
 
 dependencies {
     api(libs.geantyref)

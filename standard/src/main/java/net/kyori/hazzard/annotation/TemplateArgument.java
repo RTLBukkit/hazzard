@@ -17,7 +17,7 @@
  */
 package net.kyori.hazzard.annotation;
 
-import net.kyori.hazzard.strategy.StandardPlaceholderResolverStrategy;
+import net.kyori.hazzard.strategy.StandardTemplateVariableResolution;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -25,16 +25,16 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marker for a placeholder parameter for detection with {@link StandardPlaceholderResolverStrategy}.
+ * Marker for a template variable for detection with {@link StandardTemplateVariableResolution}.
  */
 @Documented
 @Target({ElementType.PARAMETER, ElementType.TYPE_USE})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Placeholder {
+public @interface TemplateArgument {
   /**
-   * The name of the placeholder. If empty, the resolver will use parameter name.
+   * The name of the template argument. If empty, the resolver will use parameter name.
    *
-   * @return the name of the placeholder
+   * @return the name of the template argument
    */
   String value() default "";
 }

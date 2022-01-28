@@ -17,8 +17,8 @@
  */
 package net.kyori.hazzard;
 
-import static net.kyori.hazzard.placeholder.ConclusionValue.conclusionValue;
-import static net.kyori.hazzard.placeholder.ContinuanceValue.continuanceValue;
+import static net.kyori.hazzard.variable.ReplacementResult.conclusionValue;
+import static net.kyori.hazzard.variable.IntermediateValue.continuanceValue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
@@ -38,16 +38,16 @@ import java.util.stream.Stream;
 import net.kyori.examination.Examinable;
 import net.kyori.examination.ExaminableProperty;
 import net.kyori.examination.string.StringExaminer;
-import net.kyori.hazzard.annotation.Message;
-import net.kyori.hazzard.annotation.Placeholder;
-import net.kyori.hazzard.placeholder.ConclusionValue;
-import net.kyori.hazzard.placeholder.ContinuanceValue;
-import net.kyori.hazzard.placeholder.IPlaceholderResolver;
-import net.kyori.hazzard.receiver.IReceiverLocator;
-import net.kyori.hazzard.receiver.IReceiverLocatorResolver;
-import net.kyori.hazzard.strategy.StandardPlaceholderResolverStrategy;
+import net.kyori.hazzard.annotation.TemplateArgument;
+import net.kyori.hazzard.annotation.TranslationKey;
+import net.kyori.hazzard.variable.ReplacementResult;
+import net.kyori.hazzard.variable.IntermediateValue;
+import net.kyori.hazzard.variable.ITemplateVariableResolver;
+import net.kyori.hazzard.viewer.IViewerLookupService;
+import net.kyori.hazzard.viewer.IViewerLookupServiceLocator;
+import net.kyori.hazzard.strategy.StandardTemplateVariableResolution;
 import net.kyori.hazzard.strategy.supertype.StandardSupertypeThenInterfaceSupertypeStrategy;
-import net.kyori.hazzard.util.Either;
+import net.kyori.hazzard.util.VariableWrapper;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.junit.jupiter.api.Test;
@@ -61,13 +61,13 @@ class FullHazzardTest {
 
     final HazzardType hazzard =
         Hazzard.<HazzardType, Receiver>builder(HazzardType.TYPE_TOKEN)
-            .receiverLocatorResolver(new ReceiverLocatorResolver(), 1)
-            .sourced((recv, key) -> {
+            .viewerLookupServiceLocator(new ViewerLocatorResolver(), 1)
+            .templateLocator((recv, key) -> {
               assertThat(key).isEqualTo("notification");
               return "Pling! You have a new mail from %mailAuthor%! Full mail: "
                   + email.examine(StringExaminer.simpleEscaping());
             })
-            .<String, String>rendered((recv, intermediate, placeholders, method, owner) -> {
+            .<String, String>composed((recv, intermediate, placeholders, method, owner) -> {
               String result = intermediate;
               for (final Entry<String, ? extends String> entry : placeholders.entrySet()) {
                 result = result.replace('%' + entry.getKey() + '%', entry.getValue());
@@ -75,12 +75,12 @@ class FullHazzardTest {
               return result;
             })
             .sent(Receiver::sendMessage)
-            .resolvingWithStrategy(
-                new StandardPlaceholderResolverStrategy<>(
+            .variableResolver(
+                new StandardTemplateVariableResolution<>(
                     new StandardSupertypeThenInterfaceSupertypeStrategy(true)))
-            .weightedPlaceholderResolver(String.class, new StringPlaceholderResolver<>(),
+            .weightedVariableResolver(String.class, new StringTemplateVariableResolver<>(),
                 Integer.MIN_VALUE)
-            .weightedPlaceholderResolver(Mail.class, new MailPlaceholderResolver<>(), 0)
+            .weightedVariableResolver(Mail.class, new MailTemplateVariableResolver<>(), 0)
             .create();
 
     hazzard.sendEmailNotification(receiver, email);
@@ -94,10 +94,10 @@ class FullHazzardTest {
     TypeToken<HazzardType> TYPE_TOKEN = new TypeToken<>() {
     };
 
-    @Message("notification")
+    @TranslationKey("notification")
     void sendEmailNotification(
         @Receive final Receiver receiver,
-        @Placeholder final Mail mail
+        @TemplateArgument final Mail mail
     );
   }
 
@@ -106,10 +106,10 @@ class FullHazzardTest {
       /* package-private */ @interface Receive {
   }
 
-  /* package-private */ static class ReceiverLocatorResolver implements
-      IReceiverLocatorResolver<Receiver> {
+  /* package-private */ static class ViewerLocatorResolver implements
+          IViewerLookupServiceLocator<Receiver> {
     @Override
-    public @Nullable IReceiverLocator<Receiver> resolve(final Method method, final Type proxy) {
+    public @Nullable IViewerLookupService<Receiver> resolve(final Method method, final Type proxy) {
       final Parameter[] parameters = method.getParameters();
       for (int i = 0; i < parameters.length; ++i) {
         final Parameter parameter = parameters[i];
@@ -135,13 +135,13 @@ class FullHazzardTest {
     }
   }
 
-  /* package-private */ static class StringPlaceholderResolver<R> implements
-      IPlaceholderResolver<R, String, String> {
+  /* package-private */ static class StringTemplateVariableResolver<R> implements
+          ITemplateVariableResolver<R, String, String> {
     @Override
-    public @Nullable Map<String, Either<ConclusionValue<? extends String>, ContinuanceValue<?>>> resolve(
-        final String placeholderName, final String value, final R receiver, final Type owner,
-        final Method method, final @Nullable Object[] parameters) {
-      return Map.of(placeholderName, Either.left(conclusionValue(value)));
+    public @Nullable Map<String, VariableWrapper<ReplacementResult<? extends String>, IntermediateValue<?>>> resolve(
+            final String variableName, final String value, final R viewer, final Type owner,
+            final Method method, final @Nullable Object[] parameters) {
+      return Map.of(variableName, VariableWrapper.finalResult(conclusionValue(value)));
     }
   }
 
@@ -190,16 +190,16 @@ class FullHazzardTest {
     }
   }
 
-  /* package-private */ static class MailPlaceholderResolver<R> implements
-      IPlaceholderResolver<R, Mail, String> {
+  /* package-private */ static class MailTemplateVariableResolver<R> implements
+          ITemplateVariableResolver<R, Mail, String> {
     @Override
-    public @Nullable Map<String, Either<ConclusionValue<? extends String>, ContinuanceValue<?>>> resolve(
-        final String placeholderName, final Mail value, final R receiver, final Type owner,
-        final Method method, final @Nullable Object[] parameters) {
+    public @Nullable Map<String, VariableWrapper<ReplacementResult<? extends String>, IntermediateValue<?>>> resolve(
+            final String variableName, final Mail value, final R viewer, final Type owner,
+            final Method method, final @Nullable Object[] parameters) {
       return Map.of(
-          placeholderName + "Author", Either.right(continuanceValue(value.author(), String.class)),
-          placeholderName + "Title", Either.right(continuanceValue(value.title(), String.class)),
-          placeholderName + "Body", Either.right(continuanceValue(value.body(), String.class))
+          variableName + "Author", VariableWrapper.intermediateResult(continuanceValue(value.author(), String.class)),
+          variableName + "Title", VariableWrapper.intermediateResult(continuanceValue(value.title(), String.class)),
+          variableName + "Body", VariableWrapper.intermediateResult(continuanceValue(value.body(), String.class))
       );
     }
   }

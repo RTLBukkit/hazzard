@@ -21,28 +21,28 @@ import net.kyori.hazzard.strategy.ITemplateVariableResolver;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
- * An exceptional case occurred during resolving of placeholders with a {@link ITemplateVariableResolver}.
+ * An exceptional case occurred during resolution of placeholders with a {@link ITemplateVariableResolver}.
  */
-public abstract class PlaceholderResolvingException extends HazzardException {
-  protected PlaceholderResolvingException() {
+public abstract class VariableResolutionException extends HazzardException {
+  protected VariableResolutionException() {
   }
 
-  protected PlaceholderResolvingException(final @Nullable String message) {
+  protected VariableResolutionException(final @Nullable String message) {
     super(message);
   }
 
-  protected PlaceholderResolvingException(final @Nullable String message,
-      final @Nullable Throwable cause) {
+  protected VariableResolutionException(final @Nullable String message,
+                                        final @Nullable Throwable cause) {
     super(message, cause);
   }
 
-  protected PlaceholderResolvingException(final @Nullable Throwable cause) {
+  protected VariableResolutionException(final @Nullable Throwable cause) {
     super(cause);
   }
 
-  protected PlaceholderResolvingException(final @Nullable String message,
-      final @Nullable Throwable cause, final boolean enableSuppression,
-      final boolean writableStackTrace) {
+  protected VariableResolutionException(final @Nullable String message,
+                                        final @Nullable Throwable cause, final boolean enableSuppression,
+                                        final boolean writableStackTrace) {
     super(message, cause, enableSuppression, writableStackTrace);
   }
 }

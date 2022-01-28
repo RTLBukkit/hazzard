@@ -21,10 +21,10 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import net.kyori.hazzard.internal.ReflectiveUtils;
 
-public final class NoReceiverLocatorFoundException extends UnscannableMethodException {
-  public NoReceiverLocatorFoundException(final Type owner, final Method method) {
+public final class ViewerLookupNotFoundException extends UnscannableMethodException {
+  public ViewerLookupNotFoundException(final Type owner, final Method method) {
     super(owner, method,
-        "No IReceiverLocator could be found for the following method: "
+        "No IViewerLookupServiceLocator could be found for the following method: "
             + ReflectiveUtils.formatMethodName(owner, method));
   }
 }

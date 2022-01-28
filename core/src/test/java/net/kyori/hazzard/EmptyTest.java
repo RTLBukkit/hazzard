@@ -29,11 +29,11 @@ class EmptyTest {
   void emptyTest() {
     assertThatCode(() ->
         Hazzard.builder(TypeToken.get(EmptyDefinition.class))
-            .sourced((receiver, key) -> UNIT)
-            .rendered((receiver, intermediateMessage, resolvedPlaceholders, method, owner) -> UNIT)
+            .templateLocator((receiver, key) -> UNIT)
+            .composed((receiver, intermediateMessage, resolvedPlaceholders, method, owner) -> UNIT)
             .sent((receiver, renderedMessage) -> {
             })
-            .resolvingWithStrategy((hazzard, receiver, intermediateText, hazzardMethod, parameters) -> Map.of())
+            .variableResolver((hazzard, receiver, intermediateText, hazzardMethod, parameters) -> Map.of())
             .create()
     ).doesNotThrowAnyException();
   }

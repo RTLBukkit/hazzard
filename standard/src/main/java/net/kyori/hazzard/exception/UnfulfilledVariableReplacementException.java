@@ -20,20 +20,20 @@ package net.kyori.hazzard.exception;
 import net.kyori.hazzard.internal.ReflectiveUtils;
 import net.kyori.hazzard.model.HazzardMethod;
 
-public final class UnfinishedPlaceholderException extends PlaceholderResolvingException {
+public final class UnfulfilledVariableReplacementException extends VariableResolutionException {
   private final HazzardMethod<?> hazzardMethod;
-  private final String placeholderName;
-  private final Object placeholderValue;
+  private final String variableName;
+  private final Object variableArgument;
 
-  public UnfinishedPlaceholderException(final HazzardMethod<?> hazzardMethod, final String placeholderName,
-      final Object placeholderValue) {
-    super("The placeholder "
-        + placeholderName
+  public UnfulfilledVariableReplacementException(final HazzardMethod<?> hazzardMethod, final String variableName,
+                                                 final Object variableArgument) {
+    super("The template variable "
+        + variableName
         + " was unfinished in method: "
         + ReflectiveUtils.formatMethodName(hazzardMethod.owner().getType(), hazzardMethod.reflectMethod()));
     this.hazzardMethod = hazzardMethod;
-    this.placeholderName = placeholderName;
-    this.placeholderValue = placeholderValue;
+    this.variableName = variableName;
+    this.variableArgument = variableArgument;
   }
 
   public HazzardMethod<?> hazzardMethod() {
@@ -41,10 +41,10 @@ public final class UnfinishedPlaceholderException extends PlaceholderResolvingEx
   }
 
   public String placeholderName() {
-    return this.placeholderName;
+    return this.variableName;
   }
 
   public Object placeholderValue() {
-    return this.placeholderValue;
+    return this.variableArgument;
   }
 }

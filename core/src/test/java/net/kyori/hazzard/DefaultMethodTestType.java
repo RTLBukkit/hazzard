@@ -17,15 +17,15 @@
  */
 package net.kyori.hazzard;
 
-import net.kyori.hazzard.annotation.Message;
-import net.kyori.hazzard.annotation.Placeholder;
+import net.kyori.hazzard.annotation.TranslationKey;
+import net.kyori.hazzard.annotation.TemplateArgument;
 
 public interface DefaultMethodTestType {
   String MESSAGE_KEY = "test";
   String DEFAULT_VALUE = "default placeholder value";
 
-  @Message(MESSAGE_KEY)
-  void method(@Placeholder final String placeholder);
+  @TranslationKey(MESSAGE_KEY)
+  void method(@TemplateArgument final String placeholder);
 
   default void empty() {
     this.method(DEFAULT_VALUE);

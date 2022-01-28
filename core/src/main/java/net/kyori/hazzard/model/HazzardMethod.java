@@ -21,14 +21,14 @@ import io.leangen.geantyref.TypeToken;
 import java.lang.reflect.Method;
 import java.util.Iterator;
 import net.kyori.hazzard.Hazzard;
-import net.kyori.hazzard.annotation.Message;
+import net.kyori.hazzard.annotation.TranslationKey;
 import net.kyori.hazzard.annotation.meta.ThreadSafe;
-import net.kyori.hazzard.exception.scan.MissingMessageAnnotationException;
-import net.kyori.hazzard.exception.scan.NoReceiverLocatorFoundException;
+import net.kyori.hazzard.exception.scan.MissingTranslationKeyAnnotationException;
+import net.kyori.hazzard.exception.scan.ViewerLookupNotFoundException;
 import net.kyori.hazzard.exception.scan.UnscannableMethodException;
-import net.kyori.hazzard.message.IMessageSource;
-import net.kyori.hazzard.receiver.IReceiverLocator;
-import net.kyori.hazzard.receiver.IReceiverLocatorResolver;
+import net.kyori.hazzard.message.TemplateLocator;
+import net.kyori.hazzard.viewer.IViewerLookupService;
+import net.kyori.hazzard.viewer.IViewerLookupServiceLocator;
 import net.kyori.hazzard.util.Weighted;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.checkerframework.dataflow.qual.Pure;
@@ -36,10 +36,10 @@ import org.checkerframework.dataflow.qual.Pure;
 /**
  * A data class for a scanned method.
  *
- * @param <R> the eventual receiver type of this message
+ * @param <ViewerT> the eventual receiver type of this message
  */
 @ThreadSafe
-public final class HazzardMethod<R> {
+public final class HazzardMethod<ViewerT> {
   /**
    * The owning/declaring type of this method.
    */
@@ -51,24 +51,24 @@ public final class HazzardMethod<R> {
   private final Method reflectMethod;
 
   /**
-   * The key for the message to pass to a {@link IMessageSource message source}.
+   * The key for the message to pass to a {@link TemplateLocator message source}.
    */
-  private final String messageKey;
+  private final String translationKey;
 
   /**
    * The locator for a given receiver of this message.
    */
-  private final IReceiverLocator<? extends R> receiverLocator;
+  private final IViewerLookupService<? extends ViewerT> viewerLookupService;
 
-  public HazzardMethod(final Hazzard<R, ?, ?, ?> hazzard, final TypeToken<?> owner, final Method reflectMethod)
+  public HazzardMethod(final Hazzard<ViewerT, ?, ?, ?> hazzard, final TypeToken<?> owner, final Method reflectMethod)
       throws UnscannableMethodException {
     this.owner = owner;
     this.reflectMethod = reflectMethod;
 
-    final Message message = this.findMessageAnnotation();
-    this.messageKey = message.value();
+    final TranslationKey translationKey = this.findTranslationKeyAnnotation();
+    this.translationKey = translationKey.value();
 
-    this.receiverLocator = this.findReceiverLocator(hazzard);
+    this.viewerLookupService = this.findViewerLookupService(hazzard);
   }
 
   @Pure
@@ -82,41 +82,40 @@ public final class HazzardMethod<R> {
   }
 
   @Pure
-  public String messageKey() {
-    return this.messageKey;
+  public String translationKey() {
+    return this.translationKey;
   }
 
   @Pure
-  public IReceiverLocator<? extends R> receiverLocator() {
-    return this.receiverLocator;
+  public IViewerLookupService<? extends ViewerT> viewerLookupService() {
+    return this.viewerLookupService;
   }
 
-  private Message findMessageAnnotation() throws MissingMessageAnnotationException {
-    final @Nullable Message annotation = this.reflectMethod.getAnnotation(Message.class);
+  private TranslationKey findTranslationKeyAnnotation() throws MissingTranslationKeyAnnotationException {
+    final @Nullable TranslationKey annotation = this.reflectMethod.getAnnotation(TranslationKey.class);
     //noinspection ConstantConditions -- this is completely not true. It may be null, per its Javadocs.
     if (annotation == null) {
-      throw new MissingMessageAnnotationException(this.owner.getType(), this.reflectMethod);
+      throw new MissingTranslationKeyAnnotationException(this.owner.getType(), this.reflectMethod);
     }
 
     return annotation;
   }
 
-  private IReceiverLocator<? extends R> findReceiverLocator(final Hazzard<R, ?, ?, ?> hazzard)
-      throws NoReceiverLocatorFoundException {
-    final Iterator<Weighted<? extends IReceiverLocatorResolver<? extends R>>> receiverLocatorResolverIterator =
-        hazzard.weightedReceiverLocatorResolvers().descendingIterator();
+  private IViewerLookupService<? extends ViewerT> findViewerLookupService(final Hazzard<ViewerT, ?, ?, ?> hazzard)
+      throws ViewerLookupNotFoundException {
+    final Iterator<Weighted<? extends IViewerLookupServiceLocator<? extends ViewerT>>> locators =
+        hazzard.viewerLookupServiceLocators().descendingIterator();
 
-    while (receiverLocatorResolverIterator.hasNext()) {
-      final IReceiverLocatorResolver<? extends R> receiverLocatorResolver =
-          receiverLocatorResolverIterator.next().value();
-      final @Nullable IReceiverLocator<? extends R> resolvedLocator =
-          receiverLocatorResolver.resolve(this.reflectMethod, this.owner.getType());
+    while (locators.hasNext()) {
+      final IViewerLookupServiceLocator<? extends ViewerT> serviceLocator = locators.next().value();
+      final @Nullable IViewerLookupService<? extends ViewerT> lookupServiceResult =
+              serviceLocator.resolve(this.reflectMethod, this.owner.getType());
 
-      if (resolvedLocator != null) {
-        return resolvedLocator;
+      if (lookupServiceResult != null) {
+        return lookupServiceResult;
       }
     }
 
-    throw new NoReceiverLocatorFoundException(this.owner.getType(), this.reflectMethod);
+    throw new ViewerLookupNotFoundException(this.owner.getType(), this.reflectMethod);
   }
 }
