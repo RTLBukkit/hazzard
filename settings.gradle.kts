@@ -4,14 +4,14 @@ pluginManagement {
     includeBuild("build-logic")
 }
 
-rootProject.name = "moonshine"
+rootProject.name = "hazzard"
 
-moonshineProject("core")
-moonshineProject("standard")
-moonshineProject("internal")
-moonshineProject("bom")
+hazzardProject("core")
+hazzardProject("standard")
+hazzardProject("internal")
+hazzardProject("bom")
 
-fun moonshineProject(path: String, name: String = "moonshine-$path"): ProjectDescriptor {
+fun hazzardProject(path: String, name: String = "hazzard-$path"): ProjectDescriptor {
     include(path)
     val project = project(":$path")
     project.name = name

@@ -1,9 +1,9 @@
 plugins {
-    id("moonshine.publishing")
+    id("hazzard.publishing")
     `java-platform`
 }
 
-description = "Bill of materials for moonshine"
+description = "Bill of materials for hazzard"
 
 indra {
     configurePublications {
@@ -17,7 +17,7 @@ dependencies {
             "core",
             "standard",
         ).forEach {
-            api(project(":moonshine-$it"))
+            api(project(":hazzard-$it"))
         }
     }
 }

@@ -1,4 +1,4 @@
-moonshine - A localisation library for Java.
+hazzard - A localisation library for Java.
 Copyright (C) Mariell Hoversholm
 
 This program is free software: you can redistribute it and/or modify
